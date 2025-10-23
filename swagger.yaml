@@ -1,0 +1,531 @@
+openapi: 3.0.0
+info:
+  title: Parenus CMS API
+  version: 1.0.0
+  description: >
+    API documentation for Parenus CMS Panel.  
+    Login via `/login` to get a JWT token, then authorize to access protected routes.
+
+servers:
+  - url: https://parenu-api.fly.dev/api
+    description: Production Server
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    # ---------------- LOGIN ----------------
+    LoginRequest:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: object
+          required: [email, password]
+          properties:
+            email:
+              type: string
+              example: anjiparenus@gmail.com
+            password:
+              type: string
+              example: Password
+
+    LoginResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: success
+        data:
+          type: object
+          properties:
+            token:
+              type: string
+            info:
+              type: object
+              properties:
+                id:
+                  type: integer
+                  example: 9
+                full_name:
+                  type: string
+                  example: Anji
+                email:
+                  type: string
+                  example: anjiparenus@gmail.com
+                role:
+                  type: integer
+                  example: 1
+                active:
+                  type: boolean
+                  example: true
+                last_logged_in_at:
+                  type: string
+                  format: date-time
+                  example: 2025-10-22T10:28:00.839+00:00
+
+    # ---------------- PRODUCT (RESPONSE) ----------------
+    Product:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 347
+        name:
+          type: string
+          example: "Metal Pen"
+        category_id:
+          type: string
+          example: "4d2bd245-c9c1-46fb-b098-d414a28e2a3f"
+        is_kit:
+          type: boolean
+          example: false
+        category:
+          type: string
+          example: "Metal Pens"
+        subcategory_id:
+          type: string
+          nullable: true
+          example: "3bb94e77-ace5-4b8c-925d-f63774913325"
+        subcategory:
+          type: string
+          nullable: true
+          example: "PENS"
+        variations:
+          type: integer
+          example: 0
+        status:
+          type: string
+          example: "Inactive"
+
+    # ---------------- PRODUCT (CREATE REQUEST) ----------------
+    ProductCreateRequest:
+      type: object
+      required: [name, category_id]
+      properties:
+        name:
+          type: string
+          example: "Star Product Test 1"
+        category_id:
+          type: string
+          example: "788b3ad7-35fb-44ca-8234-7090f273abbf"
+        is_kit:
+          type: boolean
+          example: true
+        category:
+          type: string
+          example: "WELCOME KITS"
+        subcategory_id:
+          type: string
+          nullable: true
+        subcategory:
+          type: string
+          nullable: true
+        variations:
+          type: integer
+          example: 1
+        status:
+          type: string
+          example: "Inactive"
+
+    # ---------------- VARIATION ----------------
+    Variation:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 21
+        sku:
+          type: string
+          example: SKU-123
+        price:
+          type: number
+          example: 149.99
+        mrp:
+          type: number
+          example: 199.99
+        inventory:
+          type: integer
+          example: 50
+        active:
+          type: boolean
+          example: true
+        created_at:
+          type: string
+          format: date-time
+          example: 2025-10-14T12:15:46Z
+        variations:
+          type: array
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+                example: color
+              value:
+                type: string
+                example: red
+              unit:
+                type: string
+                example: ""
+
+    # ---------------- CATEGORY ----------------
+    Category:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "9c19341e-9b5f-4e05-a94f-df2373e6a7cb"
+        name:
+          type: string
+          example: "Eco Mugs"
+        description:
+          type: string
+          example: "Range of Eco-friendly mugs"
+        slug:
+          type: string
+          example: "eco-friendly-mugs"
+        parent_id:
+          type: string
+          format: uuid
+          nullable: true
+          example: "01c6d1b9-84c8-435b-b8b1-43bf2475c292"
+        active:
+          type: boolean
+          example: true
+        products_count:
+          type: integer
+          example: 5
+        image:
+          type: string
+          nullable: true
+          example: null
+        variant_attribute:
+          type: string
+          nullable: true
+          example: null
+        variant_unit:
+          type: string
+          nullable: true
+          example: null
+        variant_options:
+          type: array
+          items:
+            type: string
+          example: []
+        subcategories:
+          type: array
+          items:
+            $ref: '#/components/schemas/Category'
+
+    # ---------------- CATEGORY CREATE/UPDATE ----------------
+    CategoryCreateRequest:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+          example: "WELCOME KITS"
+        description:
+          type: string
+          example: "Category for welcome kits"
+        slug:
+          type: string
+          example: "welcome-kits"
+        parent_id:
+          type: string
+          nullable: true
+          example: null
+        active:
+          type: boolean
+          example: true
+        variant_attribute:
+          type: string
+          nullable: true
+          example: null
+        variant_unit:
+          type: string
+          nullable: true
+          example: null
+        variant_options:
+          type: array
+          items:
+            type: string
+          example: []
+
+security:
+  - {}
+
+paths:
+  # ---------------- LOGIN ----------------
+  /login:
+    post:
+      summary: User Login
+      description: >
+        Authenticate user and return JWT token.  
+        **Request format:** `{ "data": { "email": "user@example.com", "password": "Password" } }`
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '401':
+          description: Unauthorized
+
+  # ---------------- PRODUCTS ----------------
+  /products:
+    get:
+      summary: List all products
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: query
+          name: search
+          schema:
+            type: string
+          required: false
+        - in: query
+          name: page
+          schema:
+            type: integer
+          required: false
+      responses:
+        '200':
+          description: List of products
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Product'
+
+    post:
+      summary: Create a new product
+      description: >
+        Create a new product in the catalog.  
+        Requires Bearer token authentication.
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                data:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/ProductCreateRequest'
+              example:
+                data:
+                  - name: "Star Product Test 1"
+                    category_id: "788b3ad7-35fb-44ca-8234-7090f273abbf"
+                    is_kit: true
+                    category: "WELCOME KITS"
+                    subcategory_id: null
+                    subcategory: null
+                    variations: 1
+                    status: "Inactive"
+      responses:
+        '201':
+          description: Product created successfully
+
+    put:
+      summary: Update an existing product
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Product'
+      responses:
+        '200':
+          description: Product updated successfully
+
+  # ---------------- VARIATIONS ----------------
+  /products/{id}/variations:
+    get:
+      summary: List product variations
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          required: true
+      responses:
+        '200':
+          description: List of variations
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Variation'
+
+    post:
+      summary: Create a new variation for a product
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          required: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                data:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/Variation'
+              example:
+                data:
+                  - sku: "SKU-456"
+                    price: 149.99
+                    mrp: 199.99
+                    inventory: 50
+                    active: true
+                    variations:
+                      - name: "color"
+                        value: "blue"
+                        unit: ""
+      responses:
+        '201':
+          description: Variation created successfully
+        '404':
+          description: Product not found
+
+    put:
+      summary: Update an existing variation of a product
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          required: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                data:
+                  $ref: '#/components/schemas/Variation'
+              example:
+                data:
+                  id: 21
+                  sku: "SKU-123"
+                  price: 159.99
+                  mrp: 199.99
+                  inventory: 60
+                  active: true
+                  variations:
+                    - name: "color"
+                      value: "red"
+                      unit: ""
+      responses:
+        '200':
+          description: Variation updated successfully
+        '404':
+          description: Variation or product not found
+
+  # ---------------- CATEGORIES ----------------
+  /categories/tree:
+    get:
+      summary: Get categories tree
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Categories tree
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Category'
+
+  /categories:
+    post:
+      summary: Create a new category
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CategoryCreateRequest'
+            example:
+              name: "WELCOME KITS"
+              description: "Category for welcome kits"
+              slug: "welcome-kits"
+              parent_id: null
+              active: true
+      responses:
+        '201':
+          description: Category created successfully
+
+    put:
+      summary: Update an existing category
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CategoryCreateRequest'
+            example:
+              name: "Updated Category"
+              description: "Updated category description"
+              slug: "updated-category"
+              active: true
+      responses:
+        '200':
+          description: Category updated successfully
+
+  /categories/{id}:
+    delete:
+      summary: Delete a category
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Category deleted successfully
+        '404':
+          description: Category not found
+
